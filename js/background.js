@@ -15,11 +15,9 @@ class Background {
     this.layer1 = new Sprite();
     this.layer2 = new Sprite();
     this.layer3 = new Sprite();
-    // Initialize layers with default images
   }
 
   create() {
-    // Load images for the background layers
     this.layer1.image = resource.get('skyClear');
     this.layer2.image = resource.get('hill');
     this.layer3.image = resource.get('tree');
@@ -29,9 +27,8 @@ class Background {
   }
 
   update(player, camera, road, director) {
-    // Update the background layers based on the player's position and speed
     if (director.paused) {
-      const increase = (start, increment, max) => { // with looping
+      const increase = (start, increment, max) => {
         let result = start + increment;
         while (result >= max) { result -= max; }
         while (result < 0) { result += max; }
@@ -39,6 +36,7 @@ class Background {
       };
       const segment = road.getSegment(camera.cursor);
       const speedPercent = player.runningPower / player.maxSpeed;
+      
       this.layer1Offset = increase(
         this.layer1Offset, this.layer1Speed * segment.curve * speedPercent * -1, 2,
       );
@@ -51,27 +49,51 @@ class Background {
     }
   }
 
-
   render(render, camera, player, roadWidth) {
-    const clip = 0;
-    const scale = 1 / camera.h;
-    const arrLayers = ['layer1', 'layer2', 'layer3'];
-    arrLayers.forEach((item) => {
-      this[item].scaleX = 9;
-      this[item].scaleY = 9;
-      const positionW = camera.screen.midpoint.x * 2 * this[`${item}Offset`];
-      const adjustedWidth = player.width / 64;
-      render.drawSprite(
-        this[item], camera, player, roadWidth, scale * 0.05 * adjustedWidth,
-        positionW, this[item].height, clip,
+    const ctx = render.renderingThings;
+    const { width, height } = ctx.canvas;
+
+    // Helper to draw a scrolling background layer
+    const drawLayer = (layer, offset, verticalOffset) => {
+      const img = layer.image;
+      if (!img) return;
+
+      const rotation = (offset * width) % width; 
+      
+      const destY = verticalOffset || 0;
+      const imgH = img.height;
+      
+      // Draw Left Side
+      ctx.drawImage(
+        img, 
+        0, 0, img.width, imgH, // Source
+        -rotation, destY, width, height / 2  // Dest (Stretched to width, half height)
       );
-      if (Math.abs(this[`${item}Offset`]) > 1) {
-        render.drawSprite(
-          this[item], camera, player, roadWidth,
-          scale * 0.05 * adjustedWidth, positionW - this[item].width, this[item].height, clip,
+      
+      // Draw Right Side (to fill the gap as it scrolls)
+      ctx.drawImage(
+        img, 
+        0, 0, img.width, imgH, 
+        width - rotation, destY, width, height / 2
+      );
+
+      // Handle the case where rotation is negative or wraps weirdly
+      if (rotation > 0) {
+         ctx.drawImage(
+          img, 
+          0, 0, img.width, imgH, 
+          -rotation + width, destY, width, height / 2
         );
       }
-    });
+    };
+
+
+    drawLayer(this.layer1, this.layer1Offset, 0);
+
+    drawLayer(this.layer2, this.layer2Offset, 10);
+
+    // Trees (Layer 3)
+    drawLayer(this.layer3, this.layer3Offset, 20);
   }
 }
 

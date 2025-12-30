@@ -45,8 +45,10 @@ class Director {
 
     handleInput.mapPress.p = true;
 
-    const segmentLineFirst = road.getSegmentFromIndex(0);
-    const segmentLineTen = road.getSegmentFromIndex(tracks[road.trackName].trackSize - 160);
+    // FIX: Place start lights at the very end of the track buffer (-3).
+    // This allows them to render just ahead of the start line.
+    const segmentLineTen = road.getSegmentFromIndex(tracks[road.trackName].trackSize - 3);
+    
     this.trackName = trackName;
     this.startLights.offsetX = 0;
     this.startLights.offsetY = 2;
@@ -56,7 +58,8 @@ class Director {
     this.startLights.sheetPosX = Math.ceil(this.animTime / 500);
     this.startLights.image = resource.get('startLights');
     this.startLights.name = 'tsStartLights';
-    segmentLineFirst.sprites.push(this.startLights);
+    
+    // Push lights only to this specific segment
     segmentLineTen.sprites.push(this.startLights);
 
     const startLineLeft = new Sprite();
@@ -73,10 +76,10 @@ class Director {
     startLineRight.image = resource.get('startLightsBar');
     startLineRight.name = 'tsStartLightsBar';
 
-    segmentLineFirst.sprites.push(startLineLeft);
-    segmentLineFirst.sprites.push(startLineRight);
+    // Push poles only to this specific segment
     segmentLineTen.sprites.push(startLineLeft);
     segmentLineTen.sprites.push(startLineRight);
+
     const rainDrops = Math.random() * 500 + 100;
     this.rain = rain(rainDrops);
     this.raining = Math.round(Math.random() * 5) % 3 === 0;

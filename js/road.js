@@ -6,9 +6,9 @@ import { resource, tracks } from './util.js';
 class Road {
  
   #segments = [];
-  #segmentLength = 200; // it could be named segmentHeight
+  #segmentLength = 200; 
   visibleSegments = 600;
-  #k = 13; // number of segments to change curb color
+  #k = 13; 
   #width = 2000;
   constructor(trackName) {
     this.trackName = trackName;
@@ -18,12 +18,10 @@ class Road {
     return this.#k;
   }
 
- 
   get segmentLength() {
     return this.#segmentLength;
   }
 
- 
   get segmentsLength() {
     return this.#segments.length;
   }
@@ -36,12 +34,19 @@ class Road {
     return this.#width;
   }
 
+  // FIX 1: Safe Segment Retrieval (Prevents Purple Screen Crash)
   getSegment(cursor) {
-    return this.#segments[Math.floor(cursor / this.#segmentLength) % this.segmentsLength];
+    const length = this.segmentsLength;
+    // Standard JS modulo can return negative numbers. This formula fixes that.
+    // e.g., -1 becomes length-1
+    const index = Math.floor(cursor / this.#segmentLength) % length;
+    return this.#segments[(index + length) % length];
   }
 
+  // FIX 2: Safe Index Retrieval
   getSegmentFromIndex(index) {
-    return this.#segments[index % this.segmentsLength];
+    const length = this.segmentsLength;
+    return this.#segments[(index % length + length) % length];
   }
 
   create() {
@@ -86,8 +91,9 @@ class Road {
       if (Math.floor(i / k) % 4 === 2) segmentLine.colors = lightColors;
       if (Math.floor(i / k) % 4 === 3) segmentLine.colors = darkColors;
 
-      if (i <= 11) {
-        segmentLine.colors.road = '#fff'
+      // FIX 3: Paint Logic aligned with end of track (lights at -3)
+      if (i >= trackSize - 13) {
+        segmentLine.colors.road = '#fff';
         i % 4 === 0 || i % 4 === 1 ? segmentLine.colors.checkers = 'one' : segmentLine.colors.checkers = 'two';
       }
 
@@ -106,13 +112,7 @@ class Road {
       tracks[this.trackName].curves
         .forEach((curve) => createCurve(curve.min, curve.max, curve.curveIncl, curve.curb));
 
-      // adding speed bump
-      // if (i <=k) {
-      //   world.y = sin(i * 0.5) * 1000;
-      // }
-
       // Road Sprites
-      // signalDirections
       const {curve: curvePower, curb} = this.getSegmentFromIndex(i);
       if (i % (k * 2) === 0 && Math.abs(curvePower) > 1 && curb) {
         const curveSignal = new Sprite();
@@ -176,6 +176,17 @@ class Road {
     }
     const { initialSeg, size, altimetry } = tracks[this.trackName].hills[0];
     createHills(1, initialSeg, size, altimetry, 0);
+
+    // FIX 4: Smoothing Loop (Prevents visual wall at loop reset)
+    if (trackSize > 200) {
+        for(let i = 0; i < 200; i++) {
+            const index = trackSize - 200 + i;
+            const segment = this.getSegmentFromIndex(index);
+            if (segment && segment.points && segment.points.world) {
+                segment.points.world.y *= (1 - (i/200)); 
+            }
+        }
+    }
   }
 
   /**
