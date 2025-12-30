@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel='stylesheet' type="text/css" href="./css/main.css">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Outrun Racer</title>
+</head>
+
+<body translate="no">
+  <div class="container">
+    <ul id="info">
+      <button id="pauseBtn" class="interfaceBtn pause hidden" name="p"></button>
+      <li id="fps"></li>
+      <button id="fullScreenBtn" class="interfaceBtn" name="fullscreenbtn">
+        <img class="img100" src="images/sprites/other/fullscreen.png">
+      </button>
+      <span id="mute" class="mute hidden"></span>
+    </ul> 
+
+    <div id="touchControls">
+      <div class="leftControls">
+        <button class="controlButtons" type="button" name="arrowup">U</button>
+        <button class="controlButtons" type="button" name="arrowdown">D</button>
+      </div>
+      <div class="rightControls">
+        <button class="controlButtons" type="button" name="enter">OK</button>
+        <button class="controlButtons" type="button" name="arrowleft">L</button>
+        <button class="controlButtons" type="button" name="arrowright">R</button>
+      </div>
+    </div>
+    
+    <canvas id="gameCanvas" width="640" height="360"></canvas>
+  </div>
+
+
+  <audio id='music'>
+    <source src="music/music.mp3">
+  </audio>
+
+  <script src="./js/stats.js"></script>
+  <script type="module" src="./js/main.js"></script>
+
+</body>
+
+</html>
