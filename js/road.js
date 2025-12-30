@@ -34,16 +34,14 @@ class Road {
     return this.#width;
   }
 
-  // FIX 1: Safe Segment Retrieval (Prevents Purple Screen Crash)
+
   getSegment(cursor) {
     const length = this.segmentsLength;
-    // Standard JS modulo can return negative numbers. This formula fixes that.
-    // e.g., -1 becomes length-1
+
     const index = Math.floor(cursor / this.#segmentLength) % length;
     return this.#segments[(index + length) % length];
   }
 
-  // FIX 2: Safe Index Retrieval
   getSegmentFromIndex(index) {
     const length = this.segmentsLength;
     return this.#segments[(index % length + length) % length];
@@ -91,7 +89,7 @@ class Road {
       if (Math.floor(i / k) % 4 === 2) segmentLine.colors = lightColors;
       if (Math.floor(i / k) % 4 === 3) segmentLine.colors = darkColors;
 
-      // FIX 3: Paint Logic aligned with end of track (lights at -3)
+
       if (i >= trackSize - 13) {
         segmentLine.colors.road = '#fff';
         i % 4 === 0 || i % 4 === 1 ? segmentLine.colors.checkers = 'one' : segmentLine.colors.checkers = 'two';
@@ -177,7 +175,7 @@ class Road {
     const { initialSeg, size, altimetry } = tracks[this.trackName].hills[0];
     createHills(1, initialSeg, size, altimetry, 0);
 
-    // FIX 4: Smoothing Loop (Prevents visual wall at loop reset)
+
     if (trackSize > 200) {
         for(let i = 0; i < 200; i++) {
             const index = trackSize - 200 + i;

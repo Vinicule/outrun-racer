@@ -45,8 +45,6 @@ class Director {
 
     handleInput.mapPress.p = true;
 
-    // FIX: Place start lights at the very end of the track buffer (-3).
-    // This allows them to render just ahead of the start line.
     const segmentLineTen = road.getSegmentFromIndex(tracks[road.trackName].trackSize - 3);
     
     this.trackName = trackName;
@@ -59,7 +57,7 @@ class Director {
     this.startLights.image = resource.get('startLights');
     this.startLights.name = 'tsStartLights';
     
-    // Push lights only to this specific segment
+
     segmentLineTen.sprites.push(this.startLights);
 
     const startLineLeft = new Sprite();
@@ -76,7 +74,6 @@ class Director {
     startLineRight.image = resource.get('startLightsBar');
     startLineRight.name = 'tsStartLightsBar';
 
-    // Push poles only to this specific segment
     segmentLineTen.sprites.push(startLineLeft);
     segmentLineTen.sprites.push(startLineRight);
 
@@ -180,35 +177,49 @@ class Director {
 
   render(render, player) {
     if (!this.paused) {
-      render.drawText('#330642', 'Game Paused!', 320, 175,
+      render.drawText('#FFFF00', 'Game Paused!', 320, 175,
         2, 'Comic Sans', 'center', 'black', true);
     }
     if (!this.paused) { 
-      render.drawText('#330642', 'Press P to Continue', 320, 215, 
+      render.drawText('#FFFF00', 'Press P to Continue', 320, 215, 
         2, 'Comic Sans', 'center', 'black', true);
     }
     if (this.totalTime < 2500) {
-      render.drawText('#330642', 'GET READY!', 320, 135,
+      render.drawText('#FFFF00', 'GET READY!', 320, 135,
         2, 'Comic Sans', 'center', 'black', true);
     }
   
-    render.drawText('#050B1A', `Lap ${this.lap} of ${tracks[this.trackName].laps}`, 4, 44, 0.8, 'Comic Sans', 'left');
+    // --- HUD BACKGROUNDS ---
+    // Left Panel (Lap & Leaderboard)
+    render.roundRect('rgba(0, 0, 0, 0.5)', 2, 25, 145, 90, 5, true, false);
+    
+    // Right Panel (Times)
+    render.roundRect('rgba(0, 0, 0, 0.5)', 490, 25, 148, 80, 5, true, false);
+    // -----------------------
+
+    // Left Side Stats (Changed color to White/Yellow for visibility)
+    render.drawText('#FFFF00', `Lap ${this.lap} of ${tracks[this.trackName].laps}`, 10, 44, 0.8, 'Comic Sans', 'left');
+    
     this.hudPositions.forEach(({ pos, name, relTime }, index) => {
       const alignPos = pos < 10 ? `0${pos}` : pos;
-      render.drawText('#050B1A', `${alignPos}`, 4, `${60 + (index * 16)}`, 0.8, 'Comic Sans', 'left');
-      render.drawText('#050B1A', `${name} ${relTime}`, 32, `${60 + (index * 16)}`, 0.8, 'Comic Sans', 'left');
+      // Position Number
+      render.drawText('#FFFFFF', `${alignPos}`, 10, `${60 + (index * 16)}`, 0.8, 'Comic Sans', 'left');
+      // Name & Time
+      render.drawText('#FFFFFF', `${name} ${relTime}`, 38, `${60 + (index * 16)}`, 0.8, 'Comic Sans', 'left');
     });
-    render.drawText('#050B1A', `Total: ${formatTime(this.totalTime)}`, 636, 44, 0.8, 'Comic Sans', 'right');
-    render.drawText('#050B1A', `Lap: ${formatTime(this.animTime)}`, 636, 60, 0.8, 'Comic Sans', 'right');
-    render.drawText('#050B1A', `Last: ${formatTime(this.lastLap)}`, 636, 76, 0.8, 'Comic Sans', 'right');
-    render.drawText('#050B1A', `Fastest Lap: ${formatTime(this.fastestLap)}`, 636, 92, 0.8, 'Comic Sans', 'right');
+
+    // Right Side Stats
+    render.drawText('#FFFFFF', `Total: ${formatTime(this.totalTime)}`, 630, 44, 0.8, 'Comic Sans', 'right');
+    render.drawText('#FFFFFF', `Lap: ${formatTime(this.animTime)}`, 630, 60, 0.8, 'Comic Sans', 'right');
+    render.drawText('#FFFFFF', `Last: ${formatTime(this.lastLap)}`, 630, 76, 0.8, 'Comic Sans', 'right');
+    render.drawText('#FFFFFF', `Fastest: ${formatTime(this.fastestLap)}`, 630, 92, 0.8, 'Comic Sans', 'right');
 
     if (this.raining) this.rain.forEach((item) => item.render(render, player));
 
     //  Render Result Screen
     if (this.finish) {
       render.roundRect('#050B1A', 100, 100, 440, 170, 20, true, false);
-      render.drawText('#FFFFFF', 'RACE FINISHED', 320, 130, 2, 'Comic Sans', 'center');
+      render.drawText('#FFFF00', 'RACE FINISHED', 320, 130, 2, 'Comic Sans', 'center');
       render.drawText('#FFFFFF', `Position: ${this.position}`, 320, 170, 1.5, 'Comic Sans', 'center');
       render.drawText('#FFFFFF', `Time: ${formatTime(this.totalTime)}`, 320, 200, 1.5, 'Comic Sans', 'center');
       render.drawText('#FFFFFF', 'Press Enter to Menu', 320, 240, 1, 'Comic Sans', 'center');
