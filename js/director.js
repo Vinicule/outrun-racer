@@ -273,7 +273,8 @@ class Director {
       return;
     }
     
-    // NEW: Countdown Text
+    // Countdown Text 
+    // to do: polish the background so the text is readable
     if (this.startSequenceTime < 2500) {
       render.drawText('#FFFF00', 'GET READY!', 320, 135, 2, 'Comic Sans', 'center', 'black', true);
     } else if (this.startSequenceTime >= 2500 && this.startSequenceTime < 3500) {
@@ -300,7 +301,7 @@ class Director {
 
     // Leaderboard 
     this.hudPositions.forEach(({ pos, name, relTime }, index) => {
-       // Only show top 3 or relevant neighbors if needed, but for now just shifting y
+       // to do: polish lb positioning so it displays top 3 + player
        const alignPos = pos < 10 ? `0${pos}` : pos;
        const yPos = 80 + (index * 16);
        if(yPos < 115) { // Clip to panel
