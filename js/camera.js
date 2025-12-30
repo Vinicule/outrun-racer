@@ -35,12 +35,10 @@ class Camera {
 
   get distanceToProjectionPlane() {
     return this.#distanceToProjectionPlane;
-    return this.
   }
 
   /**
-   * 
-   * @param {Road} road 
+   * * @param {Road} road 
    */
   update(road, director) {
     const length = road.length;

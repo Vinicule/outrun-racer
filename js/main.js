@@ -109,10 +109,27 @@ const loop = (time, render, camera, player, oppArr, road,
     tachometer.render(render);
 
     if (director.raining) bg.layer1.image = resource.get('skyDark');
+    
+    // Return to menu on Enter when finished
+    if (directorParam.finish && handleInput.mapPress.enter) {
+      menu.state = 'title';
+      menu.showMenu = 1;
+      handleInput.mapPress.enter = false;
+      const pauseBtn = document.querySelector('#pauseBtn');
+      const mute = document.querySelector('#mute');
+      const okBtn = document.querySelector('.rightControls').firstElementChild;
+      
+      // Reset UI visibility
+      pauseBtn.classList.add('hidden');
+      mute.classList.add('hidden');
+      fps.firstElementChild.classList.add('hidden');
+      okBtn.classList.add('hidden');
+      canvas.classList.remove('filter'); // Remove rain filter
+    }
 
     render.restore();
 
-    // print to screen (a better console.log)
+    // print to screen console log alt
     // addItens('#line1', `Position: ${position} / ${Number(menu.selectedOptions[1]) + 1}`);
     // addItens('#line1', `Segment: ${(cameraParam.cursor / 200).toFixed(3)}`);
     // addItens('#line2', `CameraY: ${cameraParam.y.toFixed(3)}`);
@@ -146,7 +163,7 @@ const loop = (time, render, camera, player, oppArr, road,
     cameraParam.cursor = startPosition(trackSize, qualyPos);
     playerParam.x = qualyPos % 2 ? -1 : 1;
 
-    // for test, enter race on page load
+    // test, enter race on page load
     // menu.startRace(player, road, oppArr, directorParam);
     // directorParam.startTimer = 0;
     // fps.firstElementChild.classList.remove('hidden');
@@ -177,7 +194,7 @@ const init = (time) => {
   const background = new Background();
   const menu = new Menu(width, height, particles);
   const tachometer = new Tachometer();
-  //these are constants for the new road classes
+  //constants for the new road classes
 
   background.create();
   playMusic();

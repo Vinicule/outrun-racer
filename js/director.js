@@ -26,9 +26,23 @@ class Director {
     this.carSegments = [];
     this.raining = false;
     this.rain = [];
+    // Finish flag
+    this.finish = false;
   }
 
   create(road, trackName) {
+    //  Reset race variables
+    this.totalTime = 0;
+    this.animTime = 0;
+    this.lap = 0;
+    this.lastLap = 0;
+    this.fastestLap = 0;
+    this.totalLaptimes = [];
+    this.laptimes = [];
+    this.positions = [];
+    this.finish = false;
+    this.running = true;
+
     handleInput.mapPress.p = true;
 
     const segmentLineFirst = road.getSegmentFromIndex(0);
@@ -94,8 +108,13 @@ class Director {
 
   update(player, opponent) {
     this.paused = handleInput.mapPress.p;
-    if (this.totalTime < this.startTimer || !this.paused) this.running = false;
-    else if (this.totalTime >= this.startTimer && this.paused) this.running = true;
+    
+    //  Logic to handle running state, start timer, and finish state
+    if (this.totalTime < this.startTimer || !this.paused || this.finish) {
+      this.running = false;
+    } else if (this.totalTime >= this.startTimer && this.paused && !this.finish) {
+      this.running = true;
+    }
 
     this.totalTime += (1 / 60) * 1000 * this.paused;
     this.animTime += (1 / 60) * 1000 * this.paused;
@@ -147,6 +166,12 @@ class Director {
       })).sort((a, b) => a.pos - b.pos);
 
       if (this.raining) this.rain.forEach((item) => item.update());
+      
+      // Check if race is finished
+      if (this.lap > tracks[this.trackName].laps && !this.finish) {
+        this.finish = true;
+        this.running = false;
+      }
     }
   }
 
@@ -156,7 +181,7 @@ class Director {
         2, 'Comic Sans', 'center', 'black', true);
     }
     if (!this.paused) { 
-      render.drawText('#330642', 'Press P to Continue', 320, 215, // the numbers are the positionings for the driver vehicle 
+      render.drawText('#330642', 'Press P to Continue', 320, 215, 
         2, 'Comic Sans', 'center', 'black', true);
     }
     if (this.totalTime < 2500) {
@@ -174,9 +199,17 @@ class Director {
     render.drawText('#050B1A', `Lap: ${formatTime(this.animTime)}`, 636, 60, 0.8, 'Comic Sans', 'right');
     render.drawText('#050B1A', `Last: ${formatTime(this.lastLap)}`, 636, 76, 0.8, 'Comic Sans', 'right');
     render.drawText('#050B1A', `Fastest Lap: ${formatTime(this.fastestLap)}`, 636, 92, 0.8, 'Comic Sans', 'right');
-    render.drawText('#050B1A,')
+
     if (this.raining) this.rain.forEach((item) => item.render(render, player));
 
+    //  Render Result Screen
+    if (this.finish) {
+      render.roundRect('#050B1A', 100, 100, 440, 170, 20, true, false);
+      render.drawText('#FFFFFF', 'RACE FINISHED', 320, 130, 2, 'Comic Sans', 'center');
+      render.drawText('#FFFFFF', `Position: ${this.position}`, 320, 170, 1.5, 'Comic Sans', 'center');
+      render.drawText('#FFFFFF', `Time: ${formatTime(this.totalTime)}`, 320, 200, 1.5, 'Comic Sans', 'center');
+      render.drawText('#FFFFFF', 'Press Enter to Menu', 320, 240, 1, 'Comic Sans', 'center');
+    }
   }
 }
 
