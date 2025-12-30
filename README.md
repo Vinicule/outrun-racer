@@ -1,6 +1,6 @@
 Outrun Racer
 
-A retro-style pseudo-3D arcade racing game built with vanilla JavaScript and HTML5 Canvas. Inspired by classics like *OutRun* and *Top Gear*, this project features a custom raster-based rendering engine to simulate depth and speed without using 3D libraries.
+A retro-style pseudo-3D arcade racing game built with vanilla JavaScript and HTML5 Canvas. Made as a final year project, it features a custom raster-based rendering engine to simulate depth and speed without using 3D libraries.
 
 ## Current Features
 
