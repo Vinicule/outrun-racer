@@ -76,7 +76,7 @@ const tracks = {
   starterland: {
     trackName: 'Starterland',
     trackSize: 8632,
-    laps: 15,
+    laps: 1,
     colors: {
       lightRoad: '#424142',
       darkRoad: '#393839',

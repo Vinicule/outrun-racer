@@ -50,7 +50,8 @@ class Menu {
     return 1;
   }
 
-  startRace(player, road, opponents, director) {
+  // ADDED: camera argument
+  startRace(player, road, opponents, director, camera) {
     const roadParam = road;
     const zero = 0;
     drivers.forEach((driver) => opponents.push(new Opponent(
@@ -65,9 +66,16 @@ class Menu {
     roadParam.create();
     player.create(this, tracks[this.selectedOptions[zero]].trackSize);
     director.create(road, this.selectedOptions[0]);
+
+    // FIXED: Reset Camera and Player X position
+    const qualyPos = Number(this.selectedOptions[1]) + 1;
+    if (camera) {
+      camera.cursor = startPosition(tracks[this.selectedOptions[zero]].trackSize, qualyPos);
+    }
+    player.x = qualyPos % 2 ? -1 : 1;
   }
 
-  update(player, road, opponents, director) {
+  update(player, road, opponents, director, camera) {
     const {
       arrowup, arrowdown, arrowleft, arrowright,
     } = handleInput.map;
@@ -129,7 +137,10 @@ class Menu {
         mute.classList.toggle('hidden');
         const okBtn = document.querySelector('.rightControls').firstElementChild;
         okBtn.classList.toggle('hidden');
-        this.startRace(player, road, opponents, director);
+        
+        // Pass camera here as well
+        this.startRace(player, road, opponents, director, camera);
+        
         this.state = 'race';
         handleInput.mapPress.enter = false;
         fps.firstElementChild.classList.remove('hidden');
@@ -169,7 +180,7 @@ class Menu {
 
       render.roundRect('#9f2ceb', 100, 100, 440, 170, 20, true, false);
       render.drawText('#330642', lowText, 320, 180 - 45, 1.6);
-      console.log('1', this.menuPhrase[this.menuX], '2', this.menu[this.menuX][this.menuY]);
+      
       const phrase = `${this.menuPhrase[this.menuX]} ${this.menu[this.menuX][this.menuY].toLocaleUpperCase()}`;
       render.drawText('#050B1A', phrase, 320, 180 + (this.menuTitle.pos / 4), 1.6);
       render.drawText('#330642', highText, 320, 180 + 45, 1.6);
@@ -211,4 +222,4 @@ class Menu {
   }
 }
 
-export default Menu; //exports this to the main class 
+export default Menu;

@@ -1,5 +1,5 @@
 import {
-  handleInput, formatTime, addItens, resource, tracks, canvas,
+  handleInput, formatTime, resource, tracks, canvas,
 } from './util.js';
 import Sprite from './sprite.js';
 import rain from './animations/rain.js';
@@ -26,14 +26,21 @@ class Director {
     this.carSegments = [];
     this.raining = false;
     this.rain = [];
-    // Finish flag
     this.finish = false;
+
+    // Pause Menu State
+    this.pauseOption = 0; 
+    this.keyState = { up: false, down: false, left: false, right: false, enter: false };
+    this.volume = 0.3;
+    
+    // Separate timer for the start sequence
+    this.startSequenceTime = 0;
   }
 
   create(road, trackName) {
-    //  Reset race variables
     this.totalTime = 0;
     this.animTime = 0;
+    this.startSequenceTime = 0;
     this.lap = 0;
     this.lastLap = 0;
     this.fastestLap = 0;
@@ -42,7 +49,7 @@ class Director {
     this.positions = [];
     this.finish = false;
     this.running = true;
-
+    this.pauseOption = 0;
     handleInput.mapPress.p = true;
 
     const segmentLineTen = road.getSegmentFromIndex(tracks[road.trackName].trackSize - 3);
@@ -53,10 +60,9 @@ class Director {
     this.startLights.scaleX = 27;
     this.startLights.scaleY = 27;
     this.startLights.spritesInX = 6;
-    this.startLights.sheetPosX = Math.ceil(this.animTime / 500);
+    this.startLights.sheetPosX = Math.ceil(this.startSequenceTime / 500);
     this.startLights.image = resource.get('startLights');
     this.startLights.name = 'tsStartLights';
-    
 
     segmentLineTen.sprites.push(this.startLights);
 
@@ -81,16 +87,15 @@ class Director {
     this.rain = rain(rainDrops);
     this.raining = Math.round(Math.random() * 5) % 3 === 0;
     if (this.raining) canvas.classList.add('filter');
+    
+    const music = document.getElementById('music');
+    if (music) this.volume = music.volume;
   }
 
   refreshPositions(player, opponents) {
     let arr = [];
-    const {
-      name, trackPosition, raceTime, x,
-    } = player;
-    arr.push({
-      name, pos: trackPosition, raceTime, x: Number(x.toFixed(3)),
-    });
+    const { name, trackPosition, raceTime, x } = player;
+    arr.push({ name, pos: trackPosition, raceTime, x: Number(x.toFixed(3)) });
 
     opponents.forEach((opp) => {
       const { opponentName, sprite } = opp;
@@ -106,33 +111,106 @@ class Director {
     this.positions = arr;
   }
 
-  update(player, opponent) {
+  handlePauseInput(menu, player, opponents, road, camera) {
+    const { arrowup, arrowdown, arrowleft, arrowright, enter } = handleInput.map;
+    
+    if (arrowup && !this.keyState.up) {
+        this.pauseOption = (this.pauseOption - 1 + 4) % 4;
+        this.keyState.up = true;
+    } else if (!arrowup) this.keyState.up = false;
+
+    if (arrowdown && !this.keyState.down) {
+        this.pauseOption = (this.pauseOption + 1) % 4;
+        this.keyState.down = true;
+    } else if (!arrowdown) this.keyState.down = false;
+
+    if (this.pauseOption === 2) {
+        const music = document.getElementById('music');
+        if (arrowleft && !this.keyState.left) {
+            this.volume = Math.max(0, this.volume - 0.1);
+            if(music) music.volume = this.volume;
+            this.keyState.left = true;
+        } else if (!arrowleft) this.keyState.left = false;
+
+        if (arrowright && !this.keyState.right) {
+            this.volume = Math.min(1, this.volume + 0.1);
+            if(music) music.volume = this.volume;
+            this.keyState.right = true;
+        } else if (!arrowright) this.keyState.right = false;
+    }
+
+    if (enter && !this.keyState.enter) {
+        this.keyState.enter = true;
+        switch(this.pauseOption) {
+            case 0: // Resume
+                handleInput.mapPress.p = true;
+                break;
+            case 1: // Restart
+                opponents.length = 0; 
+                menu.startRace(player, road, opponents, this, camera);
+                handleInput.mapPress.p = true; 
+                break;
+            case 2: // Volume
+                break;
+            case 3: // Main Menu
+                menu.state = 'title';
+                menu.showMenu = 1;
+                handleInput.mapPress.enter = false;
+                handleInput.mapPress.p = true; 
+                
+                const pauseBtn = document.querySelector('#pauseBtn');
+                const mute = document.querySelector('#mute');
+                const fps = document.querySelector('#fps');
+                const okBtn = document.querySelector('.rightControls').firstElementChild;
+
+                if(pauseBtn) pauseBtn.classList.add('hidden');
+                if(mute) mute.classList.add('hidden');
+                if(fps && fps.firstElementChild) fps.firstElementChild.classList.add('hidden');
+                if(okBtn) okBtn.classList.add('hidden');
+                canvas.classList.remove('filter');
+                break;
+        }
+    } else if (!enter) this.keyState.enter = false;
+  }
+
+  update(player, opponent, menu, road, camera) {
     this.paused = handleInput.mapPress.p;
     
-    //  Logic to handle running state, start timer, and finish state
-    if (this.totalTime < this.startTimer || !this.paused || this.finish) {
+    // Determine running state based on startSequenceTime
+    if (this.startSequenceTime < this.startTimer || !this.paused || this.finish) {
       this.running = false;
-    } else if (this.totalTime >= this.startTimer && this.paused && !this.finish) {
+    } else if (this.startSequenceTime >= this.startTimer && this.paused && !this.finish) {
       this.running = true;
     }
 
-    this.totalTime += (1 / 60) * 1000 * this.paused;
-    this.animTime += (1 / 60) * 1000 * this.paused;
+    if (!this.paused && !this.finish) {
+        this.handlePauseInput(menu, player, opponent, road, camera);
+    }
+
+    if (!this.finish) {
+      this.startSequenceTime += (1 / 60) * 1000 * this.paused;
+
+      if (this.running) {
+        this.totalTime += (1 / 60) * 1000 * this.paused;
+        this.animTime += (1 / 60) * 1000 * this.paused;
+      }
+    }
+
     this.lastLap = this.laptimes[this.lap - 2] ? this.laptimes[this.lap - 2] : 0;
     this.fastestLap = this.laptimes.length ? Math.min.apply(null, this.laptimes) : 0;
 
     this.position = (this.positions.findIndex((elem) => elem.name === player.name) + 1).toString();
     if (this.position < 10) this.position = `0${this.position}`;
-    let numberOfCars = this.positions.length;
-    if (numberOfCars < 10) numberOfCars = `0${numberOfCars}`;
 
     this.refreshPositions(player, opponent);
-    if (this.animTime > this.startTimer) this.startLights.sheetPosX = 0;
-    else if (this.animTime > 2000 + 2500) this.startLights.sheetPosX = 5;
-    else if (this.animTime > 2000 + 2000) this.startLights.sheetPosX = 4;
-    else if (this.animTime > 2000 + 1500) this.startLights.sheetPosX = 3;
-    else if (this.animTime > 2000 + 1000) this.startLights.sheetPosX = 2;
-    else if (this.animTime > 2000 + 500) this.startLights.sheetPosX = 1;
+    
+    // Start Lights logic
+    if (this.startSequenceTime > this.startTimer) this.startLights.sheetPosX = 0;
+    else if (this.startSequenceTime > 2000 + 2500) this.startLights.sheetPosX = 5;
+    else if (this.startSequenceTime > 2000 + 2000) this.startLights.sheetPosX = 4;
+    else if (this.startSequenceTime > 2000 + 1500) this.startLights.sheetPosX = 3;
+    else if (this.startSequenceTime > 2000 + 1000) this.startLights.sheetPosX = 2;
+    else if (this.startSequenceTime > 2000 + 500) this.startLights.sheetPosX = 1;
 
     if (this.paused) {
       const actualPos = Number(this.position);
@@ -167,7 +245,6 @@ class Director {
 
       if (this.raining) this.rain.forEach((item) => item.update());
       
-      // Check if race is finished
       if (this.lap > tracks[this.trackName].laps && !this.finish) {
         this.finish = true;
         this.running = false;
@@ -177,38 +254,61 @@ class Director {
 
   render(render, player) {
     if (!this.paused) {
-      render.drawText('#FFFF00', 'Game Paused!', 320, 175,
-        2, 'Comic Sans', 'center', 'black', true);
+      render.roundRect('rgba(0, 0, 0, 0.85)', 170, 70, 300, 220, 15, true, true);
+      render.drawText('#FFFF00', 'PAUSED', 320, 100, 2.5, 'Comic Sans', 'center', 'black', true);
+      
+      const options = [
+          'Resume', 
+          'Restart', 
+          `Volume: ${Math.round(this.volume * 10)}`, 
+          'Main Menu'
+      ];
+
+      options.forEach((text, index) => {
+          const color = this.pauseOption === index ? '#FFFF00' : '#FFFFFF';
+          const size = this.pauseOption === index ? 1.8 : 1.5;
+          const stroke = this.pauseOption === index;
+          render.drawText(color, text, 320, 150 + (index * 40), size, 'Comic Sans', 'center', 'black', stroke);
+      });
+      return;
     }
-    if (!this.paused) { 
-      render.drawText('#FFFF00', 'Press P to Continue', 320, 215, 
-        2, 'Comic Sans', 'center', 'black', true);
-    }
-    if (this.totalTime < 2500) {
-      render.drawText('#FFFF00', 'GET READY!', 320, 135,
-        2, 'Comic Sans', 'center', 'black', true);
+    
+    // NEW: Countdown Text
+    if (this.startSequenceTime < 2500) {
+      render.drawText('#FFFF00', 'GET READY!', 320, 135, 2, 'Comic Sans', 'center', 'black', true);
+    } else if (this.startSequenceTime >= 2500 && this.startSequenceTime < 3500) {
+      render.drawText('#FFFF00', '3', 320, 135, 4, 'Comic Sans', 'center', 'black', true);
+    } else if (this.startSequenceTime >= 3500 && this.startSequenceTime < 4500) {
+       render.drawText('#FFFF00', '2', 320, 135, 4, 'Comic Sans', 'center', 'black', true);
+    } else if (this.startSequenceTime >= 4500 && this.startSequenceTime < 5000) {
+       render.drawText('#FFFF00', '1', 320, 135, 4, 'Comic Sans', 'center', 'black', true);
+    } else if (this.startSequenceTime >= 5000 && this.startSequenceTime < 6000) {
+       render.drawText('#FFFF00', 'GO!', 320, 135, 4, 'Comic Sans', 'center', 'black', true);
     }
   
-    // --- HUD BACKGROUNDS ---
-    // Left Panel (Lap & Leaderboard)
-    render.roundRect('rgba(0, 0, 0, 0.5)', 2, 25, 145, 90, 5, true, false);
-    
-    // Right Panel (Times)
+    // HUD PANELS
+    render.roundRect('rgba(0, 0, 0, 0.5)', 2, 25, 145, 105, 5, true, false);
     render.roundRect('rgba(0, 0, 0, 0.5)', 490, 25, 148, 80, 5, true, false);
-    // -----------------------
 
-    // Left Side Stats (Changed color to White/Yellow for visibility)
-    render.drawText('#FFFF00', `Lap ${this.lap} of ${tracks[this.trackName].laps}`, 10, 44, 0.8, 'Comic Sans', 'left');
+    // Position
+    render.drawText('#ffffffff', `POS`, 25, 44, 0.8, 'Comic Sans', 'left', 'black', true);
+    render.drawText('#FFFFFF', `${this.position}/${this.positions.length}`, 75, 44, 0.8, 'Comic Sans', 'left', 'black', true);
     
+    // Lap
+    render.drawText('#ffffffff', `LAP`, 25, 62, 0.8, 'Comic Sans', 'left', 'black', true);
+    render.drawText('#FFFFFF', `${this.lap} / ${tracks[this.trackName].laps}`, 75, 62, 0.8, 'Comic Sans', 'left', 'black', true);
+
+    // Leaderboard 
     this.hudPositions.forEach(({ pos, name, relTime }, index) => {
-      const alignPos = pos < 10 ? `0${pos}` : pos;
-      // Position Number
-      render.drawText('#FFFFFF', `${alignPos}`, 10, `${60 + (index * 16)}`, 0.8, 'Comic Sans', 'left');
-      // Name & Time
-      render.drawText('#FFFFFF', `${name} ${relTime}`, 38, `${60 + (index * 16)}`, 0.8, 'Comic Sans', 'left');
+       // Only show top 3 or relevant neighbors if needed, but for now just shifting y
+       const alignPos = pos < 10 ? `0${pos}` : pos;
+       const yPos = 80 + (index * 16);
+       if(yPos < 115) { // Clip to panel
+           render.drawText('#FFFFFF', `${alignPos}`, 10, yPos, 0.8, 'Comic Sans', 'left');
+           render.drawText('#FFFFFF', `${name} ${relTime}`, 38, yPos, 0.8, 'Comic Sans', 'left');
+       }
     });
 
-    // Right Side Stats
     render.drawText('#FFFFFF', `Total: ${formatTime(this.totalTime)}`, 630, 44, 0.8, 'Comic Sans', 'right');
     render.drawText('#FFFFFF', `Lap: ${formatTime(this.animTime)}`, 630, 60, 0.8, 'Comic Sans', 'right');
     render.drawText('#FFFFFF', `Last: ${formatTime(this.lastLap)}`, 630, 76, 0.8, 'Comic Sans', 'right');
@@ -216,7 +316,6 @@ class Director {
 
     if (this.raining) this.rain.forEach((item) => item.render(render, player));
 
-    //  Render Result Screen
     if (this.finish) {
       render.roundRect('#050B1A', 100, 100, 440, 170, 20, true, false);
       render.drawText('#FFFF00', 'RACE FINISHED', 320, 130, 2, 'Comic Sans', 'center');

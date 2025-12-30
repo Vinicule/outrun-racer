@@ -100,7 +100,10 @@ const loop = (time, render, camera, player, oppArr, road,
     playerParam.update(cameraParam, road, directorParam, oppArr);
     oppArr.forEach((opponent) => opponent.update(road, directorParam, playerParam, oppArr));
     bg.update(playerParam, cameraParam, road, directorParam);
-    directorParam.update(playerParam, oppArr);
+    
+    // ADDED: cameraParam
+    directorParam.update(playerParam, oppArr, menu, road, cameraParam);
+    
     tachometer.update(playerParam, directorParam);
     bg.render(render, cameraParam, playerParam, road.width);
     road.render(render, cameraParam, playerParam);
@@ -110,7 +113,6 @@ const loop = (time, render, camera, player, oppArr, road,
 
     if (director.raining) bg.layer1.image = resource.get('skyDark');
     
-    // Return to menu on Enter when finished
     if (directorParam.finish && handleInput.mapPress.enter) {
       menu.state = 'title';
       menu.showMenu = 1;
@@ -124,19 +126,10 @@ const loop = (time, render, camera, player, oppArr, road,
       mute.classList.add('hidden');
       fps.firstElementChild.classList.add('hidden');
       okBtn.classList.add('hidden');
-      canvas.classList.remove('filter'); // Remove rain filter
+      canvas.classList.remove('filter'); 
     }
 
     render.restore();
-
-    // print to screen console log alt
-    // addItens('#line1', `Position: ${position} / ${Number(menu.selectedOptions[1]) + 1}`);
-    // addItens('#line1', `Segment: ${(cameraParam.cursor / 200).toFixed(3)}`);
-    // addItens('#line2', `CameraY: ${cameraParam.y.toFixed(3)}`);
-    // addItens('#line3', `NoUse: ${playerParam.z.toFixed(3)}`);
-    // addItens('#line4', `Centrifugal: ${playerParam.centrifugalForce.toFixed(3)}`);
-    // addItens('#line5', `Curve: ${playerParam.curvePower.toFixed(3)}`);
-    // addItens('#line6', `PlayerX: ${playerParam.x.toFixed(3)}`);
   }
 
   if (menu.state === 'title') {
@@ -150,28 +143,18 @@ const loop = (time, render, camera, player, oppArr, road,
     if (menu.updateAnimationsTime) menu.animations.forEach((item) => item.update());
 
     if (directorParam.timeSinceLastFrameSwap > menu.updateTime) {
-      menu.update(playerParam, road, oppArr, directorParam);
+      // ADDED: cameraParam so menu can start race with camera
+      menu.update(playerParam, road, oppArr, directorParam, cameraParam);
       toggleMusic('event', selectedOptions[3], selectedOptions[4]);
       directorParam.timeSinceLastFrameSwap = 0;
     }
 
     menu.render(render);
 
-    // spawn point before startLine
     const { trackSize } = tracks[selectedOptions[0]];
     const qualyPos = Number(selectedOptions[1]) + 1;
     cameraParam.cursor = startPosition(trackSize, qualyPos);
     playerParam.x = qualyPos % 2 ? -1 : 1;
-
-    // test, enter race on page load
-    // menu.startRace(player, road, oppArr, directorParam);
-    // directorParam.startTimer = 0;
-    // fps.firstElementChild.classList.remove('hidden');
-    // const pauseBtn = document.querySelector('#pauseBtn');
-    // const mute = document.querySelector('#mute');
-    // pauseBtn.classList.toggle('hidden');
-    // mute.classList.toggle('hidden');
-    // menu.state = 'race';
   }
 
   stats.end();
@@ -194,8 +177,7 @@ const init = (time) => {
   const background = new Background();
   const menu = new Menu(width, height, particles);
   const tachometer = new Tachometer();
-  //constants for the new road classes
-
+  
   background.create();
   playMusic();
 
